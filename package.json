@@ -1,0 +1,7 @@
+{
+  "name": "klassiki-vk-covers",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "test": "node --test" },
+  "dependencies": { "@vkontakte/vk-bridge": "3.0.2" }
+}

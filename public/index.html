@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Обложки · Классики</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="vk-bridge.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="app">
+    <section class="profile" aria-label="Предпросмотр обложки">
+      <div class="cover-header"><img id="preview" src="covers/1.png" alt="На солнечной поляне"><span class="preview-label">Предпросмотр</span></div>
+      <div class="profile-info"><div id="avatar" class="avatar" aria-hidden="true">К</div><div class="identity"><h1 id="profileName">Обложки «Классиков»</h1><p id="profileSubtitle">Больше, чем отряд</p></div></div>
+    </section>
+    <div class="content">
+      <nav class="tabs" aria-label="Разделы"><button id="galleryTab" class="tab active" aria-pressed="true" aria-controls="catalog">Обложки Классиков</button><button id="helpTab" class="tab" aria-pressed="false" aria-controls="help">Как установить</button></nav>
+      <section id="catalog" aria-label="Каталог обложек"><div class="catalog-caption"><span>Выбери свою обложку</span><span>12 вариантов</span></div><div id="gallery" class="gallery" aria-label="Галерея обложек"></div></section>
+      <section id="help" class="help" hidden><h2>Обложка на твоей странице</h2><p>Мы проверяем возможность автоматической установки для личного профиля. Кнопка снизу запросит разрешение ВК на фотографии и проверит API. Изображение при проверке не устанавливается.</p><h3>Можно установить вручную</h3><ol><li>Выбери обложку в каталоге.</li><li>Нажми «Скачать» под галереей.</li><li>Открой профиль ВК и выбери изменение обложки.</li><li>Загрузи картинку, проверь кадрирование и сохрани.</li></ol></section>
+      <div class="chosen"><div><span class="chosen-label">Выбрана обложка</span><strong id="coverTitle">На солнечной поляне</strong></div><a id="download" href="covers/1.png" download="klassiki-1.png">Скачать ↓</a></div>
+      <div class="connection"><p id="status" role="status" aria-live="polite">Определяем среду запуска…</p><button id="report" hidden>Скачать результат проверки</button></div>
+    </div>
+    <footer class="action-bar"><button id="probe" class="primary" disabled>Проверить установку</button><span>Автоматическая установка пока не подтверждена</span></footer>
+  </main>
+</body></html>
