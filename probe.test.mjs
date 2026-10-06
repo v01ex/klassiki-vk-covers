@@ -8,13 +8,15 @@ test('probe only requests upload server, does not write, omits group_id and reda
   const bridge={send:async (method,args) => {
     calls.push([method,args]);
     if(method==='VKWebAppGetAuthToken') return {access_token:'secret-token'};
-    return {response:{upload_url:'https://upload.vk.com/?secret=value'}};
+    return args.method === 'users.get' ? {response:[{id:123}]} : {response:{upload_url:'https://upload.vk.com/?secret=value'}};
   }};
   const result=await probeCoverAPI(bridge,123);
-  assert.equal(calls.length,2);
+  assert.equal(calls.length,3);
   assert.equal(calls[0][1].scope,'photos');
-  assert.equal(calls[1][1].method,'photos.getOwnerCoverPhotoUploadServer');
-  assert.equal('group_id' in calls[1][1].params,false);
+  assert.equal(calls[1][1].method,'users.get');
+  assert.equal(calls[2][1].method,'photos.getOwnerCoverPhotoUploadServer');
+  assert.equal('group_id' in calls[2][1].params,false);
+  assert.equal('crop_x2' in calls[2][1].params,false);
   assert.equal(result.upload_url_received,true);
   assert.equal(result.profile_installation_confirmed,false);
   assert.doesNotMatch(JSON.stringify(result),/secret/);
@@ -29,7 +31,25 @@ test('invalid app IDs are rejected before authorization',async () => {
 });
 test('API errors preserve code without token or request parameters',async () => {
   const bridge={send:async method => method==='VKWebAppGetAuthToken' ? {access_token:'secret'} : {error:{error_code:100,request_params:[{value:'secret'}]}}};
-  try {await probeCoverAPI(bridge,123);assert.fail();} catch(error) {assert.deepEqual(safeError(error),{status:'failed',error_code:100});}
+  try {await probeCoverAPI(bridge,123);assert.fail();} catch(error) {
+    const report=safeError(error);
+    assert.equal(report.error_code,100);assert.equal(report.error_type,'api_error');
+    assert.equal(report.stage,'users.get');assert.doesNotMatch(JSON.stringify(report),/secret|request_params/);
+  }
+});
+test('cover-specific failure distinguishes successful authorization and control call',async () => {
+  const bridge={send:async (method,args) => {
+    if(method==='VKWebAppGetAuthToken') return {access_token:'secret'};
+    if(args.method==='users.get') return {response:[{id:123}]};
+    throw {error_type:'api_error',error_data:{error_code:10,error_msg:'secret',request_params:['secret']}};
+  }};
+  try {await probeCoverAPI(bridge,123);assert.fail();} catch(error) {
+    const report=safeError(error);
+    assert.equal(report.stage,'photos.getOwnerCoverPhotoUploadServer');
+    assert.equal(report.error_type,'api_error');assert.equal(report.error_code,10);
+    assert.equal(report.control_api_succeeded,true);assert.equal(report.authorization_succeeded,true);
+    assert.doesNotMatch(JSON.stringify(report),/secret/);
+  }
 });
 test('static preview serves all covers and protects files outside public',async () => {
   await new Promise(resolve => server.listen(0,'127.0.0.1',resolve));

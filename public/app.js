@@ -1,4 +1,4 @@
-import { probeCoverAPI, safeError } from './probe.js';
+import { probeCoverAPI, safeError } from './probe.js?v=2';
 const covers = [[1,'На солнечной поляне'],[2,'Больше, чем отряд'],[3,'Летнее небо в лагере'],[6,'Осенним вечером'],[7,'Навстречу приключениям'],[8,'В зелёной траве'],[9,'В кругу своих'],[11,'Лягушка в облаках'],[12,'Облачное настроение'],[13,'Песни на закате'],[14,'Останусь ждать лето'],[17,'Отрядное сердце']];
 const $ = id => document.getElementById(id);
 const bridge = window.vkBridge;
@@ -31,7 +31,7 @@ async function init() {
   try {
     await timed(bridge.send('VKWebAppInit'));
     $('probe').disabled = false;
-    $('status').textContent = 'Готово к проверке API под твоим аккаунтом.';
+    $('status').textContent = 'Диагностика 2: проверим разрешение, связь с API и загрузку обложки.';
     timed(bridge.send('VKWebAppGetUserInfo')).then(user => {
       $('profileName').textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Мой профиль';
       $('profileSubtitle').textContent = user.city?.title || 'Обложка для личного профиля';
@@ -46,13 +46,15 @@ $('probe').addEventListener('click', async () => {
   $('probe').disabled = true; $('report').hidden = true;
   $('status').textContent = 'Ожидаем разрешение ВК и ответ API…';
   try {
-    report = await timed(probeCoverAPI(bridge,appId));
+    report = await probeCoverAPI(bridge,appId);
     $('status').textContent = report.upload_url_received
       ? 'ВК вернул адрес загрузки без group_id. Это ещё не подтверждает поддержку профиля. Скачай результат проверки для следующего шага.'
       : 'Адрес загрузки не получен. Автоматическая установка этим способом пока недоступна.';
   } catch (error) {
     report = safeError(error);
-    $('status').textContent = `ВК не разрешил проверку или не ответил${report.error_code !== null ? ` (код ${report.error_code})` : ''}. Можно повторить попытку или скачать обложку.`;
+    const stages = { authorization: 'получение разрешения на фотографии', 'users.get': 'контрольный вызов API', 'photos.getOwnerCoverPhotoUploadServer': 'получение адреса загрузки обложки', unknown: 'неизвестный этап' };
+    const reason = report.timed_out ? 'ВК не ответил вовремя' : report.error_type === 'api_error' && report.error_code === 10 ? 'Внутренняя ошибка API ВК' : 'Ошибка ВК';
+    $('status').textContent = `Диагностика 2: ${reason}${report.error_code !== null ? ` (код ${report.error_code}, ${report.error_type})` : ''}. Этап: ${stages[report.stage]}. Скачай результат проверки.`;
   } finally { $('probe').disabled = false; $('report').hidden = false; }
 });
 $('report').addEventListener('click', () => {
